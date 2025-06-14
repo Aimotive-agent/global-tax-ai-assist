@@ -10,7 +10,7 @@ const Settings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Ensure the back button always works and language changes update the UI
+  // Ensure the back button always navigates to dashboard
   const handleLanguageChange = (code: string) => {
     i18n.changeLanguage(code);
     toast({
@@ -19,7 +19,6 @@ const Settings = () => {
     });
   };
 
-  // Optionally, focus management for accessibility
   useEffect(() => {
     document.title = t("Settings");
   }, [t]);
@@ -28,7 +27,7 @@ const Settings = () => {
     <div className="p-6 max-w-xl">
       <button
         className="mb-4 px-3 py-1 bg-secondary text-secondary-foreground rounded hover:bg-accent transition"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/")}
       >
         ← {t("Back")}
       </button>
@@ -42,3 +41,4 @@ const Settings = () => {
 };
 
 export default Settings;
+
