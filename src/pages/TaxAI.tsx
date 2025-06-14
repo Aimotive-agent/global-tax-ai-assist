@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const fetchAIAnswer = async (prompt: string): Promise<string> => {
   const response = await fetch('/functions/v1/tax-ai', {
@@ -19,20 +20,31 @@ const TaxAI = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<{role: string; content: string}[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleAsk = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    setMessages(msgs => [...msgs, {role: 'user', content: input}]);
     setLoading(true);
+    setMessages(msgs => [...msgs, {role: 'user', content: input}]);
     const answer = await fetchAIAnswer(input);
-    setMessages(msgs => [...msgs, {role: 'user', content: input}, {role: 'ai', content: answer}]);
+    setMessages(msgs => [
+      ...msgs,
+      {role: 'user', content: input},
+      {role: 'ai', content: answer}
+    ]);
     setInput('');
     setLoading(false);
   };
 
   return (
     <div className="p-6 max-w-xl">
+      <button
+        className="mb-4 px-3 py-1 bg-secondary text-secondary-foreground rounded hover:bg-accent transition"
+        onClick={() => navigate("/")}
+      >
+        ← {t("Back")}
+      </button>
       <h1 className="text-2xl font-bold mb-3">{t("Tax AI")}</h1>
       <form onSubmit={handleAsk} className="flex gap-2 mb-4">
         <input

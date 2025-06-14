@@ -2,11 +2,13 @@
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Invoices = () => {
   const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<null | string>(null);
+  const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFile(e.target.files?.[0] || null);
@@ -25,6 +27,12 @@ const Invoices = () => {
 
   return (
     <div className="p-6 max-w-xl">
+      <button
+        className="mb-4 px-3 py-1 bg-secondary text-secondary-foreground rounded hover:bg-accent transition"
+        onClick={() => navigate("/")}
+      >
+        ← {t("Back")}
+      </button>
       <h1 className="text-2xl font-bold mb-2">{t("Invoices & Receipts")}</h1>
       <form onSubmit={handleUpload} className="mb-6 flex flex-col gap-4">
         <label className="block">

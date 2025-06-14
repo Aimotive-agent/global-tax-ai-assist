@@ -2,6 +2,7 @@
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const countryForms = [
   { code: "us", name: "USA", file: "/sample/tax-form-us.pdf" },
@@ -15,9 +16,16 @@ const TaxForms = () => {
   const { t } = useTranslation();
   const [country, setCountry] = useState<string>("us");
   const form = countryForms.find(f => f.code === country);
+  const navigate = useNavigate();
 
   return (
     <div className="p-6 max-w-xl">
+      <button
+        className="mb-4 px-3 py-1 bg-secondary text-secondary-foreground rounded hover:bg-accent transition"
+        onClick={() => navigate("/")}
+      >
+        ← {t("Back")}
+      </button>
       <h1 className="text-2xl font-bold mb-2">{t("Tax Forms")}</h1>
       <div className="mb-3">
         <label className="block mb-1">{t("Select your country")}</label>
