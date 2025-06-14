@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -11,6 +12,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.body.style.background =
@@ -19,6 +21,16 @@ const Auth = () => {
       document.body.style.background = "";
     };
   }, []);
+
+  // Auto redirect after successful login with a short delay
+  useEffect(() => {
+    if (successMsg === "Success! Redirecting...") {
+      const timeout = setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 1200); // 1200ms = 1.2s to let user see the success message
+      return () => clearTimeout(timeout);
+    }
+  }, [successMsg, navigate]);
 
   const handleAuth = async (type: "login" | "signup") => {
     setLoading(true);
