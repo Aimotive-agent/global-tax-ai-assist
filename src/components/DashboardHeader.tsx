@@ -1,16 +1,20 @@
 
 import { BarChart3 } from "lucide-react";
+import UserMenu from "./UserMenu";
 
 const DashboardHeader = () => {
   return (
-    <header className="px-8 py-6 border-b bg-white/70 backdrop-blur flex items-center gap-3 shadow-sm h-[80px]">
+    <header className="px-8 py-6 border-b bg-gradient-to-r from-[#6a82fb]/80 to-[#fc5c7d]/80 backdrop-blur flex items-center gap-3 shadow-md h-[80px]">
       <span className="flex items-center gap-2">
-        <BarChart3 size={32} className="text-primary" />
-        <span className="text-2xl font-extrabold tracking-tight select-none">AI TAX Assistant</span>
+        <BarChart3 size={32} className="text-primary drop-shadow" />
+        <span className="text-2xl font-extrabold tracking-tight select-none bg-gradient-to-r from-[#fc5c7d] via-[#6a82fb] to-[#fbc2eb] bg-clip-text text-transparent">AI TAX Assistant</span>
       </span>
-      <span className="ml-auto text-sm text-muted-foreground hidden md:block">
+      <span className="ml-auto text-sm text-muted-foreground hidden md:block font-medium italic">
         Smarter tax. Less work. Handle compliance for every country.
       </span>
+      <div className="ml-6">
+        <UserMenu />
+      </div>
     </header>
   );
 };
