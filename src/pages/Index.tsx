@@ -1,12 +1,109 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState } from "react";
+import DashboardHeader from "@/components/DashboardHeader";
+import SidebarNav from "@/components/SidebarNav";
+import CompanyList from "@/components/CompanyList";
+import CreateCompanyModal from "@/components/CreateCompanyModal";
+import FileUploader from "@/components/FileUploader";
+import CountrySelector from "@/components/CountrySelector";
+import TaxFormPreview from "@/components/TaxFormPreview";
 
 const Index = () => {
+  // App state hooks
+  const [showCreateCompany, setShowCreateCompany] = useState(false);
+  const [companies, setCompanies] = useState([
+    // Initial state. In a real app, fetch from API or Supabase
+  ]);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<{ [companyId: string]: File[] }>({});
+  const [selectedCountry, setSelectedCountry] = useState<string>("US");
+
+  // Handler props
+  const handleCreateCompany = (name: string) => {
+    const newCompany = { id: `${Date.now()}`, name };
+    setCompanies(prev => [...prev, newCompany]);
+    setShowCreateCompany(false);
+  };
+
+  const handleSelectCompany = (companyId: string) => {
+    setSelectedCompany(companyId);
+  };
+
+  const handleFileUpload = (companyId: string, files: File[]) => {
+    setUploadedFiles(prev => ({
+      ...prev,
+      [companyId]: [...(prev[companyId] || []), ...files]
+    }));
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background flex text-left">
+      <SidebarNav
+        companies={companies}
+        selectedCompany={selectedCompany}
+        onSelectCompany={handleSelectCompany}
+        onAddCompany={() => setShowCreateCompany(true)}
+      />
+      <main className="flex-1 flex flex-col min-h-screen bg-gradient-to-br from-white to-slate-50 p-0">
+        <DashboardHeader />
+        <div className="container mx-auto py-8 flex flex-col gap-8 flex-1">
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Left Column: Company List */}
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold text-lg">Companies</h2>
+                <button
+                  onClick={() => setShowCreateCompany(true)}
+                  className="px-3 py-1 rounded bg-primary text-primary-foreground text-sm hover:bg-primary/80 transition"
+                >
+                  + Add Company
+                </button>
+              </div>
+              <CompanyList
+                companies={companies}
+                selectedCompany={selectedCompany}
+                onSelect={handleSelectCompany}
+              />
+            </div>
+            {/* Center Column: File Uploader and Invoices */}
+            <div className="col-span-2 flex flex-col gap-8">
+              <div className="rounded-lg border bg-card shadow p-6">
+                <h2 className="text-lg font-semibold mb-2">Upload Invoices & Receipts</h2>
+                {selectedCompany ? (
+                  <FileUploader
+                    companyId={selectedCompany}
+                    files={uploadedFiles[selectedCompany] || []}
+                    onUpload={files => handleFileUpload(selectedCompany, files)}
+                  />
+                ) : (
+                  <div className="text-muted-foreground text-sm">Select a company to upload documents.</div>
+                )}
+              </div>
+              <div className="rounded-lg border bg-card p-6 shadow flex flex-col gap-4">
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <span className="text-lg font-semibold">Tax AI Assistant</span>
+                    <span className="block text-muted-foreground text-xs">
+                      Automatically check what you can claim and generate country-specific tax forms.
+                    </span>
+                  </div>
+                  <CountrySelector selected={selectedCountry} onSelect={setSelectedCountry} />
+                </div>
+                <TaxFormPreview
+                  company={companies.find(c => c.id === selectedCompany)}
+                  files={uploadedFiles[selectedCompany] || []}
+                  country={selectedCountry}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <CreateCompanyModal
+          open={showCreateCompany}
+          onClose={() => setShowCreateCompany(false)}
+          onCreate={handleCreateCompany}
+        />
+      </main>
     </div>
   );
 };
