@@ -1,9 +1,9 @@
-
 import { useAppState } from "@/components/AppStateContext";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { FileText, Download } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const countryForms: Record<string, string> = {
   US: "IRS Form 1120 (Corporate Tax Return)",
@@ -24,6 +24,46 @@ const TaxOverview = () => {
   const countryList = ["US", "DE", "FR", "IN"];
   const uploads = selectedCompany ? uploadedFiles[selectedCompany] || [] : [];
   const total = uploads.reduce((sum, f) => sum + (typeof f === "object" && "size" in f ? f.size/100 : 0), 0); // Demo: use file size as mock "amount"
+
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  useEffect(() => {
+    // Only call AI if there's a company and at least one file
+    if (!selectedCompany || uploads.length === 0) {
+      setAiSummary(null);
+      return;
+    }
+    const fetchAI = async () => {
+      setAiLoading(true);
+      setAiSummary(null);
+      try {
+        const company = companies.find(c => c.id === selectedCompany);
+        const body = JSON.stringify({
+          companyName: company?.name || "",
+          countryCode: selectedCountry,
+          files: uploads.map(f => ({ name: f.name, size: f.size })),
+        });
+        const resp = await fetch(
+          "https://irhkslejkxhlmhvcyozv.supabase.co/functions/v1/tax-overview-summary",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+          }
+        );
+        const data = await resp.json();
+        setAiSummary(data.summary);
+      } catch {
+        setAiSummary("AI failed to summarize your tax situation.");
+      } finally {
+        setAiLoading(false);
+      }
+    };
+    fetchAI();
+  // Only refetch if uploaded files, selected company, or country changes
+  // eslint-disable-next-line
+  }, [selectedCompany, uploads.length, selectedCountry]);
 
   return (
     <div className="p-6 max-w-2xl mx-auto w-full">
@@ -102,8 +142,18 @@ const TaxOverview = () => {
           <ul className="text-sm mb-2">
             <li>{t("Total Files")}: <b>{uploads.length}</b></li>
             <li>{t("Simulated Income")}: <b>${total.toFixed(2)}</b> (sum of file sizes/100)</li>
-            <li className="text-muted-foreground">{t("Auto-filling tax forms by AI coming soon!")}</li>
           </ul>
+          <div className="mb-3">
+            {aiLoading ? (
+              <div className="text-sm text-muted-foreground animate-pulse">
+                {t("AI is analyzing your files...")}
+              </div>
+            ) : aiSummary ? (
+              <div className="text-primary text-sm font-medium">{aiSummary}</div>
+            ) : (
+              <div className="text-muted-foreground text-sm">{t("Auto-filling tax forms by AI coming soon!")}</div>
+            )}
+          </div>
           <Button variant="outline" disabled>
             {t("Download completed tax form (coming soon)")}
           </Button>
