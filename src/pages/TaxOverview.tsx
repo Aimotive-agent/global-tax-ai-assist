@@ -1,23 +1,11 @@
 
-import { useState } from "react";
+import { useAppState } from "@/components/AppStateContext";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, FileText, Download } from "lucide-react";
+import { FileText, Download } from "lucide-react";
 
-// Simulate company and upload context for now
-const mockCompanies = [
-  { id: "1", name: "Acme Inc" },
-  { id: "2", name: "Beta Corp" },
-];
-const mockUploads: Record<string, { filename: string; amount: number }[]> = {
-  "1": [
-    { filename: "receipt-jan.pdf", amount: 123.4 },
-    { filename: "sales-feb.png", amount: 256.5 },
-  ],
-  "2": [{ filename: "invoice-april.pdf", amount: 987 }],
-};
-const mockCountryTaxes: Record<string, string> = {
+const countryForms: Record<string, string> = {
   US: "IRS Form 1120 (Corporate Tax Return)",
   DE: "USt 1 A (Value Added Tax Form)",
   FR: "FR Tax F3220",
@@ -26,12 +14,16 @@ const mockCountryTaxes: Record<string, string> = {
 
 const TaxOverview = () => {
   const { t } = useTranslation();
-  const [selectedCompany, setSelectedCompany] = useState("1");
-  const [selectedCountry, setSelectedCountry] = useState("US");
   const navigate = useNavigate();
+  const {
+    companies, selectedCompany, setSelectedCompany,
+    uploadedFiles, selectedCountry, setSelectedCountry
+  } = useAppState();
 
-  const uploads = mockUploads[selectedCompany] || [];
-  const total = uploads.reduce((sum, f) => sum + f.amount, 0);
+  const companyList = companies;
+  const countryList = ["US", "DE", "FR", "IN"];
+  const uploads = selectedCompany ? uploadedFiles[selectedCompany] || [] : [];
+  const total = uploads.reduce((sum, f) => sum + (typeof f === "object" && "size" in f ? f.size/100 : 0), 0); // Demo: use file size as mock "amount"
 
   return (
     <div className="p-6 max-w-2xl mx-auto w-full">
@@ -42,20 +34,28 @@ const TaxOverview = () => {
         ← {t("Back")}
       </button>
       <h1 className="text-2xl font-bold mb-2">{t("Tax Overview")}</h1>
-
       <div className="mb-4 flex gap-4">
         <div>
           <label className="block text-xs mb-1 font-semibold">{t("Company")}</label>
-          <select value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)} className="border rounded px-3 py-2 bg-muted">
-            {mockCompanies.map(c => (
+          <select
+            value={selectedCompany || ""}
+            onChange={e => setSelectedCompany(e.target.value)}
+            className="border rounded px-3 py-2 bg-muted"
+          >
+            <option value="" disabled>{t("Select company")}</option>
+            {companyList.map(c => (
               <option value={c.id} key={c.id}>{c.name}</option>
             ))}
           </select>
         </div>
         <div>
           <label className="block text-xs mb-1 font-semibold">{t("Country")}</label>
-          <select value={selectedCountry} onChange={e => setSelectedCountry(e.target.value)} className="border rounded px-3 py-2 bg-muted">
-            {[ "US", "DE", "FR", "IN" ].map(code => (
+          <select
+            value={selectedCountry}
+            onChange={e => setSelectedCountry(e.target.value)}
+            className="border rounded px-3 py-2 bg-muted"
+          >
+            {countryList.map(code => (
               <option key={code} value={code}>{code}</option>
             ))}
           </select>
@@ -74,19 +74,19 @@ const TaxOverview = () => {
             <thead>
               <tr className="bg-muted">
                 <th className="py-2 px-4 text-left">{t("Filename")}</th>
-                <th className="py-2 px-4 text-left">{t("Amount")}</th>
+                <th className="py-2 px-4 text-left">{t("File Size (KB)")}</th>
               </tr>
             </thead>
             <tbody>
               {uploads.map((f, idx) => (
-                <tr key={f.filename + idx} className="border-t">
-                  <td className="py-2 px-4">{f.filename}</td>
-                  <td className="py-2 px-4">${f.amount.toFixed(2)}</td>
+                <tr key={f.name + idx} className="border-t">
+                  <td className="py-2 px-4">{f.name}</td>
+                  <td className="py-2 px-4">{Math.round(f.size / 1024)}</td>
                 </tr>
               ))}
               <tr className="font-semibold bg-accent border-t">
-                <td className="py-2 px-4">{t("Total")}</td>
-                <td className="py-2 px-4">${total.toFixed(2)}</td>
+                <td className="py-2 px-4">{t("Total files")}</td>
+                <td className="py-2 px-4">{uploads.length}</td>
               </tr>
             </tbody>
           </table>
@@ -98,10 +98,10 @@ const TaxOverview = () => {
           {t("AI-filled Tax Form Preview")}
         </h2>
         <div className="rounded border px-4 py-3 bg-muted/60">
-          <div className="mb-2 font-medium">{mockCountryTaxes[selectedCountry] || t("Country Tax Form")}</div>
+          <div className="mb-2 font-medium">{countryForms[selectedCountry] || t("Country Tax Form")}</div>
           <ul className="text-sm mb-2">
-            <li>{t("Total Income")}: <b>${total.toFixed(2)}</b> ({uploads.length} docs)</li>
-            <li>{t("Last doc uploaded")}: {uploads.length ? uploads[uploads.length - 1].filename : "--"}</li>
+            <li>{t("Total Files")}: <b>{uploads.length}</b></li>
+            <li>{t("Simulated Income")}: <b>${total.toFixed(2)}</b> (sum of file sizes/100)</li>
             <li className="text-muted-foreground">{t("Auto-filling tax forms by AI coming soon!")}</li>
           </ul>
           <Button variant="outline" disabled>

@@ -6,16 +6,16 @@ import CreateCompanyModal from "@/components/CreateCompanyModal";
 import FileUploader from "@/components/FileUploader";
 import CountrySelector from "@/components/CountrySelector";
 import TaxFormPreview from "@/components/TaxFormPreview";
+import { useAppState } from "@/components/AppStateContext";
 
 const Index = () => {
-  // App state hooks
+  const {
+    companies, setCompanies,
+    selectedCompany, setSelectedCompany,
+    uploadedFiles, setUploadedFiles,
+    selectedCountry, setSelectedCountry
+  } = useAppState();
   const [showCreateCompany, setShowCreateCompany] = useState(false);
-  const [companies, setCompanies] = useState([
-    // Initial state. In a real app, fetch from API or Supabase
-  ]);
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<{ [companyId: string]: File[] }>({});
-  const [selectedCountry, setSelectedCountry] = useState<string>("US");
 
   // Handler props
   const handleCreateCompany = (name: string) => {

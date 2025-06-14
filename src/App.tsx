@@ -12,71 +12,74 @@ import Invoices from "./pages/Invoices";
 import TaxForms from "./pages/TaxForms";
 import Settings from "./pages/Settings";
 import TaxOverview from "./pages/TaxOverview";
+import { AppStateProvider } from "@/components/AppStateContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route
-            path="/"
-            element={
-              <RequireAuth>
-                <Index />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/tax-ai"
-            element={
-              <RequireAuth>
-                <TaxAI />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/invoices"
-            element={
-              <RequireAuth>
-                <Invoices />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/tax-forms"
-            element={
-              <RequireAuth>
-                <TaxForms />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <RequireAuth>
-                <Settings />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/tax-overview"
-            element={
-              <RequireAuth>
-                <TaxOverview />
-              </RequireAuth>
-            }
-          />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <AppStateProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/"
+              element={
+                <RequireAuth>
+                  <Index />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/tax-ai"
+              element={
+                <RequireAuth>
+                  <TaxAI />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/invoices"
+              element={
+                <RequireAuth>
+                  <Invoices />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/tax-forms"
+              element={
+                <RequireAuth>
+                  <TaxForms />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <RequireAuth>
+                  <Settings />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/tax-overview"
+              element={
+                <RequireAuth>
+                  <TaxOverview />
+                </RequireAuth>
+              }
+            />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </AppStateProvider>
 );
 
 export default App;
