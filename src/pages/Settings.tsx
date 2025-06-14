@@ -3,19 +3,26 @@ import { useTranslation } from "react-i18next";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { useEffect } from "react";
 
 const Settings = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Handler for language changes
+  // Ensure the back button always works and language changes update the UI
   const handleLanguageChange = (code: string) => {
+    i18n.changeLanguage(code);
     toast({
       title: t("Language changed!"),
-      description: t("App language set to") + ` ${code}`,
+      description: `${t("App language set to")} ${code}`,
     });
   };
+
+  // Optionally, focus management for accessibility
+  useEffect(() => {
+    document.title = t("Settings");
+  }, [t]);
 
   return (
     <div className="p-6 max-w-xl">
@@ -33,4 +40,5 @@ const Settings = () => {
     </div>
   );
 };
+
 export default Settings;

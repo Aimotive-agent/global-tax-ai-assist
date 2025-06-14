@@ -20,7 +20,6 @@ const languages = [
   { code: "ko", label: "한국어" },
   { code: "tr", label: "Türkçe" },
   { code: "fa", label: "فارسی" },
-  // Add more as desired
 ];
 
 const LanguageSelector = ({ onLanguageChange }: LanguageSelectorProps) => {
@@ -33,6 +32,7 @@ const LanguageSelector = ({ onLanguageChange }: LanguageSelectorProps) => {
         if (onLanguageChange) onLanguageChange(e.target.value);
       }}
       className="px-3 py-2 rounded border bg-muted w-full max-w-xs"
+      aria-label="Select language"
     >
       {languages.map(l => (
         <option value={l.code} key={l.code}>{l.label}</option>

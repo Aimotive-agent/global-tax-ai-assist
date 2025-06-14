@@ -2,61 +2,62 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+
+const fetchAIAnswer = async (prompt: string): Promise<string> => {
+  const response = await fetch('/functions/v1/tax-ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!response.ok) return "There was an error contacting the AI.";
+  const data = await response.json();
+  return data.generatedText || "No answer available.";
+};
 
 const TaxAI = () => {
   const { t } = useTranslation();
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<string | null>(null);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<{role: string; content: string}[]>([]);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
-  const handleAsk = async () => {
-    if (!question.trim()) return;
+  const handleAsk = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    setMessages(msgs => [...msgs, {role: 'user', content: input}]);
     setLoading(true);
-    setAnswer(null);
-
-    try {
-      const res = await fetch("/functions/v1/tax-ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ question }),
-      });
-      if (!res.ok) throw new Error("Failed to get response");
-      const data = await res.json();
-      setAnswer(data.answer || t("Sorry, I couldn't find an answer."));
-    } catch (e: any) {
-      toast({ title: t("Error"), description: e.message });
-      setAnswer(t("Error getting response from the AI assistant."));
-    }
+    const answer = await fetchAIAnswer(input);
+    setMessages(msgs => [...msgs, {role: 'user', content: input}, {role: 'ai', content: answer}]);
+    setInput('');
     setLoading(false);
   };
 
   return (
     <div className="p-6 max-w-xl">
-      <h1 className="text-2xl font-bold mb-2">{t("Tax AI Assistant")}</h1>
-      <p className="mb-6 text-muted-foreground">{t("Ask your tax questions below. Powered by AI!")}</p>
-      <textarea
-        className="w-full border rounded-md p-2 mb-2 bg-muted"
-        rows={4}
-        placeholder={t("Type your tax question here...")}
-        value={question}
-        onChange={e => setQuestion(e.target.value)}
-        disabled={loading}
-      />
-      <Button
-        onClick={handleAsk}
-        disabled={loading || !question.trim()}
-        className="mb-4"
-      >
-        {loading ? t("Thinking...") : t("Send")}
-      </Button>
-      {answer && (
-        <div className="mt-2 p-3 rounded bg-muted text-muted-foreground border">{answer}</div>
-      )}
+      <h1 className="text-2xl font-bold mb-3">{t("Tax AI")}</h1>
+      <form onSubmit={handleAsk} className="flex gap-2 mb-4">
+        <input
+          className="border rounded px-3 py-2 w-full bg-muted"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder={t("Ask a tax question...")}
+          disabled={loading}
+        />
+        <Button type="submit" disabled={loading || !input.trim()}>
+          {loading ? t("Sending...") : t("Ask")}
+        </Button>
+      </form>
+      <div className="space-y-2 max-h-80 overflow-auto mb-6">
+        {messages.length === 0 && (
+          <div className="text-muted-foreground">{t("Ask a tax-related question to our AI assistant.")}</div>
+        )}
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`rounded p-2 ${msg.role === "user" ? "bg-accent" : "bg-secondary"}`}>
+            {msg.role === "user" ? t("You") : "AI"}: {msg.content}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
+
 export default TaxAI;
