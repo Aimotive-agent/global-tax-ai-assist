@@ -1,6 +1,6 @@
-
 import { BarChart3 } from "lucide-react";
 import UserMenu from "./UserMenu";
+import LanguageSelector from "./LanguageSelector";
 
 const DashboardHeader = () => {
   return (
@@ -12,8 +12,11 @@ const DashboardHeader = () => {
       <span className="ml-auto text-sm text-muted-foreground hidden md:block font-medium italic">
         Smarter tax. Less work. Handle compliance for every country.
       </span>
-      <div className="ml-6">
+      <div className="ml-6 flex items-center gap-2">
         <UserMenu />
+        <div className="hidden md:block">
+          <LanguageSelector />
+        </div>
       </div>
     </header>
   );

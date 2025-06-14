@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +7,10 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import RequireAuth from "./components/RequireAuth";
+import TaxAI from "./pages/TaxAI";
+import Invoices from "./pages/Invoices";
+import TaxForms from "./pages/TaxForms";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +27,38 @@ const App = () => (
             element={
               <RequireAuth>
                 <Index />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/tax-ai"
+            element={
+              <RequireAuth>
+                <TaxAI />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/invoices"
+            element={
+              <RequireAuth>
+                <Invoices />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/tax-forms"
+            element={
+              <RequireAuth>
+                <TaxForms />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RequireAuth>
+                <Settings />
               </RequireAuth>
             }
           />
