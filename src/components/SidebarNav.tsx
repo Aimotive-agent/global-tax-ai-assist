@@ -18,6 +18,7 @@ interface NavProps {
 }
 
 const navSections = [
+  { label: "Tax Overview", icon: Globe2, to: "/tax-overview" },
   { label: "Tax AI", icon: Bot, to: "/tax-ai" },
   { label: "Invoices / Receipts", icon: Receipt, to: "/invoices" },
   { label: "Tax Forms", icon: FilePlus2, to: "/tax-forms" },

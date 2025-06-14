@@ -11,6 +11,7 @@ import TaxAI from "./pages/TaxAI";
 import Invoices from "./pages/Invoices";
 import TaxForms from "./pages/TaxForms";
 import Settings from "./pages/Settings";
+import TaxOverview from "./pages/TaxOverview";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,14 @@ const App = () => (
             element={
               <RequireAuth>
                 <Settings />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/tax-overview"
+            element={
+              <RequireAuth>
+                <TaxOverview />
               </RequireAuth>
             }
           />
