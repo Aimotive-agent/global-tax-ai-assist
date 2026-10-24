@@ -1,8 +1,10 @@
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-import React, { createContext, useContext, useState } from "react";
+/** Uploaded documents are stored as metadata (File objects don't survive reloads). */
+export type DocFile = { name: string; size: number; type?: string };
 
 type Company = { id: string; name: string };
-type UploadedFiles = { [companyId: string]: File[] };
+type UploadedFiles = { [companyId: string]: DocFile[] };
 
 interface AppState {
   companies: Company[];
@@ -17,11 +19,51 @@ interface AppState {
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
 
+const STORAGE_KEY = "veritas-tax-ai:app-state";
+
+interface Persisted {
+  companies: Company[];
+  selectedCompany: string | null;
+  uploadedFiles: UploadedFiles;
+  selectedCountry: string;
+}
+
+const loadState = (): Partial<Persisted> => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Partial<Persisted>) : {};
+  } catch {
+    return {};
+  }
+};
+
 export const AppStateProvider = ({ children }: { children: React.ReactNode }) => {
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>({});
-  const [selectedCountry, setSelectedCountry] = useState<string>("US");
+  const initial = loadState();
+  const [companies, setCompanies] = useState<Company[]>(initial.companies ?? []);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(
+    initial.selectedCompany ?? null
+  );
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>(initial.uploadedFiles ?? {});
+  const [selectedCountry, setSelectedCountry] = useState<string>(initial.selectedCountry ?? "US");
+
+  // Keep the workspace across reloads.
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ companies, selectedCompany, uploadedFiles, selectedCountry })
+      );
+    } catch {
+      /* storage full or unavailable — keep working in-memory */
+    }
+  }, [companies, selectedCompany, uploadedFiles, selectedCountry]);
+
+  // Drop a stale selection (e.g. company deleted or state tampered with).
+  useEffect(() => {
+    if (selectedCompany && !companies.some((c) => c.id === selectedCompany)) {
+      setSelectedCompany(null);
+    }
+  }, [companies, selectedCompany]);
 
   return (
     <AppStateContext.Provider
@@ -33,7 +75,7 @@ export const AppStateProvider = ({ children }: { children: React.ReactNode }) =>
         uploadedFiles,
         setUploadedFiles,
         selectedCountry,
-        setSelectedCountry
+        setSelectedCountry,
       }}
     >
       {children}

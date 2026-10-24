@@ -1,13 +1,4 @@
-
-const countries = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "IN", name: "India" },
-  // Add more as needed
-];
+import { countries } from "@/lib/taxData";
 
 interface Props {
   selected: string;
@@ -17,13 +8,14 @@ interface Props {
 const CountrySelector = ({ selected, onSelect }: Props) => (
   <select
     value={selected}
-    onChange={e => onSelect(e.target.value)}
-    className="text-sm px-2 py-1 border rounded bg-muted outline-none text-foreground"
-    style={{minWidth:120}}
+    onChange={(e) => onSelect(e.target.value)}
+    className="h-9 rounded-md border border-line bg-white px-3 text-sm text-foreground transition hover:border-navy/30"
     aria-label="Select country"
   >
-    {countries.map(c => (
-      <option value={c.code} key={c.code}>{c.name}</option>
+    {countries.map((c) => (
+      <option value={c.code} key={c.code}>
+        {c.flag} {c.name}
+      </option>
     ))}
   </select>
 );

@@ -1,165 +1,199 @@
 import { useAppState } from "@/components/AppStateContext";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { FileText, Download } from "lucide-react";
+import { FileText, Sparkles, ExternalLink, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const countryForms: Record<string, string> = {
-  US: "IRS Form 1120 (Corporate Tax Return)",
-  DE: "USt 1 A (Value Added Tax Form)",
-  FR: "FR Tax F3220",
-  IN: "ITR-6 (Company Income Tax Return)",
-};
+import ReactMarkdown from "react-markdown";
+import AppShell from "@/components/AppShell";
+import StatCard from "@/components/StatCard";
+import CountrySelector from "@/components/CountrySelector";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { getCountry, formatKb } from "@/lib/taxData";
 
 const TaxOverview = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const {
-    companies, selectedCompany, setSelectedCompany,
-    uploadedFiles, selectedCountry, setSelectedCountry
+    companies,
+    selectedCompany,
+    setSelectedCompany,
+    uploadedFiles,
+    selectedCountry,
+    setSelectedCountry,
   } = useAppState();
 
-  const companyList = companies;
-  const countryList = ["US", "DE", "FR", "IN"];
   const uploads = selectedCompany ? uploadedFiles[selectedCompany] || [] : [];
-  const total = uploads.reduce((sum, f) => sum + (typeof f === "object" && "size" in f ? f.size/100 : 0), 0); // Demo: use file size as mock "amount"
+  const company = companies.find((c) => c.id === selectedCompany);
+  const taxCountry = getCountry(selectedCountry);
+  const totalBytes = uploads.reduce((sum, f) => sum + f.size, 0);
 
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiRequested, setAiRequested] = useState(false);
 
-  useEffect(() => {
-    // Only call AI if there's a company and at least one file
-    if (!selectedCompany || uploads.length === 0) {
-      setAiSummary(null);
-      return;
-    }
-    const fetchAI = async () => {
-      setAiLoading(true);
-      setAiSummary(null);
-      try {
-        const company = companies.find(c => c.id === selectedCompany);
-        const body = JSON.stringify({
+  const uploadsKey = uploads.map((f) => `${f.name}:${f.size}`).join("|");
+
+  const fetchSummary = async () => {
+    if (!selectedCompany || uploads.length === 0) return;
+    setAiLoading(true);
+    setAiRequested(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("tax-overview-summary", {
+        body: {
           companyName: company?.name || "",
           countryCode: selectedCountry,
-          files: uploads.map(f => ({ name: f.name, size: f.size })),
-        });
-        const resp = await fetch(
-          "https://irhkslejkxhlmhvcyozv.supabase.co/functions/v1/tax-overview-summary",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-          }
-        );
-        const data = await resp.json();
-        setAiSummary(data.summary);
-      } catch {
-        setAiSummary("AI failed to summarize your tax situation.");
-      } finally {
-        setAiLoading(false);
-      }
-    };
-    fetchAI();
-  // Only refetch if uploaded files, selected company, or country changes
-  // eslint-disable-next-line
-  }, [selectedCompany, uploads.length, selectedCountry]);
+          files: uploads.map((f) => ({ name: f.name, size: f.size })),
+        },
+      });
+      if (error) throw error;
+      setAiSummary(data?.summary ?? "Unable to generate summary.");
+    } catch {
+      setAiSummary("AI is unavailable right now. Please try again shortly.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedCompany || uploads.length === 0) {
+      setAiSummary(null);
+      setAiRequested(false);
+      return;
+    }
+    fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCompany, uploadsKey, selectedCountry]);
 
   return (
-    <div className="p-6 max-w-2xl mx-auto w-full">
-      <button
-        className="mb-4 px-3 py-1 bg-secondary text-secondary-foreground rounded hover:bg-accent transition"
-        onClick={() => navigate("/")}
-      >
-        ← {t("Back")}
-      </button>
-      <h1 className="text-2xl font-bold mb-2">{t("Tax Overview")}</h1>
-      <div className="mb-4 flex gap-4">
+    <AppShell title="Tax Overview" eyebrow="Compliance">
+      {/* Controls */}
+      <div className="brand-card mb-6 flex flex-wrap items-end gap-6 p-5">
         <div>
-          <label className="block text-xs mb-1 font-semibold">{t("Company")}</label>
+          <label className="brand-eyebrow mb-1.5 block">{t("Company")}</label>
           <select
             value={selectedCompany || ""}
-            onChange={e => setSelectedCompany(e.target.value)}
-            className="border rounded px-3 py-2 bg-muted"
+            onChange={(e) => setSelectedCompany(e.target.value)}
+            className="h-9 rounded-md border border-line bg-white px-3 text-sm"
           >
-            <option value="" disabled>{t("Select company")}</option>
-            {companyList.map(c => (
-              <option value={c.id} key={c.id}>{c.name}</option>
+            <option value="" disabled>
+              {t("Select company")}
+            </option>
+            {companies.map((c) => (
+              <option value={c.id} key={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-xs mb-1 font-semibold">{t("Country")}</label>
-          <select
-            value={selectedCountry}
-            onChange={e => setSelectedCountry(e.target.value)}
-            className="border rounded px-3 py-2 bg-muted"
+          <label className="brand-eyebrow mb-1.5 block">{t("Country")}</label>
+          <CountrySelector selected={selectedCountry} onSelect={setSelectedCountry} />
+        </div>
+        <div className="ml-auto">
+          <a
+            href={taxCountry.authorityUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-2 text-sm font-medium text-navy transition hover:border-navy/30"
           >
-            {countryList.map(code => (
-              <option key={code} value={code}>{code}</option>
-            ))}
-          </select>
+            {taxCountry.authority} official forms <ExternalLink size={13} />
+          </a>
         </div>
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-2">
-          <FileText size={18} className="text-primary" />
+      {/* Stats */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={FileText}
+          label="Documents"
+          value={uploads.length}
+          hint={uploads.length ? `Total ${formatKb(totalBytes)}` : "No documents uploaded"}
+        />
+        <StatCard
+          icon={FileText}
+          label="Tax form"
+          value={taxCountry.code}
+          hint={taxCountry.form}
+        />
+        <StatCard
+          icon={Sparkles}
+          label="AI summary"
+          value={aiLoading ? "Analyzing…" : aiSummary ? "Available" : "Awaiting documents"}
+          hint={company ? company.name : "Select a company"}
+        />
+      </div>
+
+      {/* Documents */}
+      <section className="brand-card mb-6 p-6">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <FileText size={18} className="text-navy" />
           {t("Uploaded Receipts & Invoices")}
         </h2>
+        <div className="section-rule mt-2 mb-4" />
         {uploads.length === 0 ? (
-          <div className="text-muted-foreground text-sm">{t("No uploaded documents for this company.")}</div>
+          <div className="rounded-lg border border-dashed border-line bg-paper-2/50 p-6 text-sm text-muted-foreground">
+            {t("No uploaded documents for this company.")}
+          </div>
         ) : (
-          <table className="w-full text-sm border">
-            <thead>
-              <tr className="bg-muted">
-                <th className="py-2 px-4 text-left">{t("Filename")}</th>
-                <th className="py-2 px-4 text-left">{t("File Size (KB)")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {uploads.map((f, idx) => (
-                <tr key={f.name + idx} className="border-t">
-                  <td className="py-2 px-4">{f.name}</td>
-                  <td className="py-2 px-4">{Math.round(f.size / 1024)}</td>
+          <div className="overflow-hidden rounded-lg border border-line">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-paper-2 text-left">
+                  <th className="px-4 py-2.5 font-semibold text-ink">{t("Filename")}</th>
+                  <th className="px-4 py-2.5 font-semibold text-ink">{t("File Size")}</th>
                 </tr>
-              ))}
-              <tr className="font-semibold bg-accent border-t">
-                <td className="py-2 px-4">{t("Total files")}</td>
-                <td className="py-2 px-4">{uploads.length}</td>
-              </tr>
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white">
+                {uploads.map((f, idx) => (
+                  <tr key={f.name + idx} className="border-t border-line">
+                    <td className="px-4 py-2.5">{f.name}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{formatKb(f.size)}</td>
+                  </tr>
+                ))}
+                <tr className="border-t border-line bg-paper-2/60 font-semibold">
+                  <td className="px-4 py-2.5">{t("Total files")}</td>
+                  <td className="px-4 py-2.5">{uploads.length}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-2">
-          <Download size={18} className="text-primary" />
+      </section>
+
+      {/* AI summary */}
+      <section className="brand-card p-6">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Sparkles size={18} className="text-gold" />
           {t("AI-filled Tax Form Preview")}
         </h2>
-        <div className="rounded border px-4 py-3 bg-muted/60">
-          <div className="mb-2 font-medium">{countryForms[selectedCountry] || t("Country Tax Form")}</div>
-          <ul className="text-sm mb-2">
-            <li>{t("Total Files")}: <b>{uploads.length}</b></li>
-            <li>{t("Simulated Income")}: <b>${total.toFixed(2)}</b> (sum of file sizes/100)</li>
-          </ul>
-          <div className="mb-3">
-            {aiLoading ? (
-              <div className="text-sm text-muted-foreground animate-pulse">
-                {t("AI is analyzing your files...")}
-              </div>
-            ) : aiSummary ? (
-              <div className="text-primary text-sm font-medium">{aiSummary}</div>
-            ) : (
-              <div className="text-muted-foreground text-sm">{t("Auto-filling tax forms by AI coming soon!")}</div>
-            )}
+        <div className="section-rule mt-2 mb-4" />
+        <div className="rounded-lg border-l-2 border-gold bg-paper-2/50 px-5 py-4">
+          <div className="mb-2 font-medium text-ink">
+            {taxCountry.flag} {taxCountry.form}
           </div>
-          <Button variant="outline" disabled>
-            {t("Download completed tax form (coming soon)")}
-          </Button>
+          {aiLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw size={14} className="animate-spin" />
+              {t("AI is analyzing your files...")}
+            </div>
+          ) : aiSummary ? (
+            <div className="text-sm leading-relaxed text-ink prose prose-sm max-w-none prose-p:my-1.5 prose-headings:font-serif prose-headings:text-ink prose-strong:text-ink prose-li:my-0.5 prose-ul:my-1.5">
+              <ReactMarkdown>{aiSummary}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              {aiRequested
+                ? "No summary available."
+                : "Upload documents to generate an AI summary of your tax position."}
+            </div>
+          )}
+          {uploads.length > 0 && !aiLoading && (
+            <Button variant="outline" size="sm" className="mt-3" onClick={fetchSummary}>
+              <RefreshCw size={13} className="mr-1.5" /> Regenerate summary
+            </Button>
+          )}
         </div>
-      </div>
-    </div>
+      </section>
+    </AppShell>
   );
 };
 

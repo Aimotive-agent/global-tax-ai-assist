@@ -1,6 +1,13 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -27,23 +34,28 @@ const CreateCompanyModal = ({ open, onClose, onCreate }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Company</DialogTitle>
+          <DialogTitle className="font-serif text-xl">Add company</DialogTitle>
+          <DialogDescription>
+            Companies keep invoices, receipts and tax filings organized per legal entity.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <Input
             placeholder="Enter company name"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             autoFocus
             className="mb-2"
           />
-          {error && <div className="text-red-500 text-xs mb-2">{error}</div>}
+          {error && <div className="mb-2 text-xs text-destructive">{error}</div>}
           <DialogFooter>
-            <Button type="submit" variant="default">Create</Button>
+            <Button type="submit">Create</Button>
             <DialogClose asChild>
-              <Button type="button" variant="outline">Cancel</Button>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
             </DialogClose>
           </DialogFooter>
         </form>

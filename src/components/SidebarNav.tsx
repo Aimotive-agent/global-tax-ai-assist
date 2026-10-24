@@ -1,86 +1,119 @@
-
-import {
-  Building2,
-  FilePlus2,
-  Receipt,
-  Globe2,
-  Bot,
-  Settings
-} from "lucide-react";
+import { Building2, FilePlus2, Receipt, Globe2, Bot, Settings, LayoutDashboard, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-
-interface NavProps {
-  companies: { id: string, name: string }[];
-  selectedCompany: string | null;
-  onSelectCompany: (id: string) => void;
-  onAddCompany: () => void;
-}
+import { useAppState } from "./AppStateContext";
 
 const navSections = [
+  { label: "Dashboard", icon: LayoutDashboard, to: "/" },
   { label: "Tax Overview", icon: Globe2, to: "/tax-overview" },
-  { label: "Tax AI", icon: Bot, to: "/tax-ai" },
-  { label: "Invoices / Receipts", icon: Receipt, to: "/invoices" },
+  { label: "Tax AI Assistant", icon: Bot, to: "/tax-ai" },
+  { label: "Invoices & Receipts", icon: Receipt, to: "/invoices" },
   { label: "Tax Forms", icon: FilePlus2, to: "/tax-forms" },
   { label: "Settings", icon: Settings, to: "/settings" },
 ];
 
-const SidebarNav = ({ companies, selectedCompany, onSelectCompany, onAddCompany }: NavProps) => {
-  const { t } = useTranslation();
+interface SidebarNavProps {
+  onAddCompany: () => void;
+}
+
+const SidebarNav = ({ onAddCompany }: SidebarNavProps) => {
+  const { companies, selectedCompany, setSelectedCompany } = useAppState();
   const location = useLocation();
+
   return (
-    <nav className="h-screen w-[245px] shrink-0 border-r bg-sidebar-DEFAULT px-4 py-8 flex flex-col justify-between sticky top-0">
-      <div>
-        <div className="mb-8">
-          <div className="text-sm font-bold text-sidebar-foreground/80 mb-2 tracking-widest">{t("YOUR COMPANIES")}</div>
-          <ul className="space-y-1">
-            {companies.length === 0 && (
-              <li>
-                <span className="block text-xs text-muted-foreground/70 py-2 px-3">{t("No companies yet")}</span>
-              </li>
-            )}
-            {companies.map(company => (
+    <nav className="sticky top-0 flex h-screen w-[264px] shrink-0 flex-col bg-sidebar text-sidebar-foreground">
+      {/* Brand lockup */}
+      <Link to="/" className="flex items-center gap-3 px-5 pb-5 pt-6">
+        <img
+          src="/veritas-mark.png"
+          alt="Veritas Global AI"
+          className="h-11 w-11 shrink-0 object-contain"
+        />
+        <span className="min-w-0">
+          <span className="block font-serif text-[17px] font-semibold leading-tight text-white">
+            Veritas Tax AI
+          </span>
+          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">
+            Global Tax Compliance
+          </span>
+        </span>
+      </Link>
+
+      <div className="mx-4 h-px bg-white/10" />
+
+      {/* Companies */}
+      <div className="px-4 pt-5">
+        <div className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
+          Your Companies
+        </div>
+        <ul className="space-y-0.5">
+          {companies.length === 0 && (
+            <li className="px-3 py-2 text-xs text-white/40">
+              No companies yet.
+            </li>
+          )}
+          {companies.map((company) => {
+            const active = selectedCompany === company.id;
+            return (
               <li key={company.id}>
                 <button
-                  className={`group flex items-center gap-2 py-2 px-3 w-full rounded hover:bg-primary/10 hover:text-primary text-sm font-medium transition ${
-                    selectedCompany === company.id
-                      ? "bg-primary/10 text-primary"
-                      : "text-sidebar-foreground"
+                  onClick={() => setSelectedCompany(company.id)}
+                  className={`flex w-full items-center gap-2.5 rounded-md border-l-2 py-2 pl-3 pr-2 text-left text-sm transition ${
+                    active
+                      ? "border-gold bg-white/10 text-white"
+                      : "border-transparent text-white/70 hover:bg-white/5 hover:text-white"
                   }`}
-                  onClick={() => onSelectCompany(company.id)}
                 >
-                  <Building2 size={18} className="shrink-0" />
+                  <Building2 size={16} className={active ? "text-gold" : "opacity-70"} />
                   <span className="truncate">{company.name}</span>
                 </button>
               </li>
-            ))}
-          </ul>
-          <button
-            onClick={onAddCompany}
-            className="mt-3 flex items-center gap-1 px-3 py-2 bg-sidebar-accent text-sidebar-accent-foreground rounded hover:bg-primary/5 transition text-xs font-semibold"
-          >
-            <Building2 size={16} /> {t("Add Company")}
-          </button>
+            );
+          })}
+        </ul>
+        <button
+          onClick={onAddCompany}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-gold/40 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10"
+        >
+          <Plus size={14} /> Add Company
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <div className="mt-6 px-4">
+        <div className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
+          Navigation
         </div>
-        <hr className="my-6 border-sidebar-border" />
-        <div className="text-xs text-sidebar-foreground/70 mb-3 font-semibold px-2">{t("NAVIGATION")}</div>
-        <ul className="space-y-1">
-          {navSections.map(sec => (
-            <li key={sec.label}>
-              <Link
-                to={sec.to}
-                className={`flex gap-2 items-center py-1.5 px-3 rounded text-sm hover:bg-primary/10 focus:bg-primary/10 group transition text-sidebar-foreground ${
-                  location.pathname === sec.to ? "bg-primary/10 text-primary font-semibold" : ""
-                }`}
-              >
-                <sec.icon size={18} className="opacity-80" />
-                <span>{t(sec.label)}</span>
-              </Link>
-            </li>
-          ))}
+        <ul className="space-y-0.5">
+          {navSections.map((sec) => {
+            const active = location.pathname === sec.to;
+            return (
+              <li key={sec.to}>
+                <Link
+                  to={sec.to}
+                  className={`flex items-center gap-2.5 rounded-md border-l-2 py-2 pl-3 pr-2 text-sm transition ${
+                    active
+                      ? "border-gold bg-white/10 font-semibold text-white"
+                      : "border-transparent text-white/70 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <sec.icon size={16} className={active ? "text-gold" : "opacity-70"} />
+                  <span>{sec.label}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
-      <div className="text-xs text-sidebar-foreground/50 text-center py-4">ⓒ {new Date().getFullYear()} AI TAX Assistant</div>
+
+      {/* Footer */}
+      <div className="mt-auto border-t border-white/10 px-5 py-4">
+        <div className="text-[11px] leading-relaxed text-white/40">
+          © {new Date().getFullYear()} Veritas Global AI
+          <span className="mt-0.5 block text-white/30">
+            Intelligence, engineered for the enterprise.
+          </span>
+        </div>
+      </div>
     </nav>
   );
 };

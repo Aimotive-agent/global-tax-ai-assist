@@ -1,49 +1,67 @@
+/**
+ * Veritas Tax AI — tax question answering.
+ *
+ * POST { "question": "..." }  ->  { "answer": "..." }
+ * ("prompt" is accepted as an alias for "question".)
+ *
+ * Provider is OpenAI-compatible and configured via env:
+ *   AI_BASE_URL  (default https://api.openai.com/v1)
+ *   AI_API_KEY   (falls back to OPENAI_API_KEY)
+ *   AI_MODEL     (default gpt-4o-mini)
+ */
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+const AI_BASE_URL = (Deno.env.get("AI_BASE_URL") ?? "https://api.openai.com/v1").replace(/\/+$/, "");
+const AI_API_KEY = Deno.env.get("AI_API_KEY") ?? Deno.env.get("OPENAI_API_KEY") ?? "";
+const AI_MODEL = Deno.env.get("AI_MODEL") ?? "gpt-4o-mini";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  // Handle CORS preflight
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { question } = await req.json();
-    if (!question) throw new Error("No question provided.");
+    const body = await req.json();
+    const question = body?.question ?? body?.prompt;
+    if (!question) {
+      return json({ answer: "No question provided." }, 400);
+    }
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    const res = await fetch(`${AI_BASE_URL}/chat/completions`, {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${AI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: AI_MODEL,
         messages: [
-          { role: "system", content: "You are a helpful AI tax assistant. Answer tax-related questions clearly and concisely." },
-          { role: "user", content: question }
+          {
+            role: "system",
+            content:
+              "You are a helpful AI tax assistant for Veritas Tax AI. Answer tax-related questions clearly and concisely. Keep answers practical, and note when a qualified tax professional should confirm a filing decision.",
+          },
+          { role: "user", content: question },
         ],
-        max_tokens: 512
+        max_tokens: 512,
       }),
     });
+
     const aiData = await res.json();
     const answer = aiData.choices?.[0]?.message?.content?.trim();
-
-    return new Response(JSON.stringify({ answer: answer ?? "No answer received." }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+    return json({ answer: answer ?? "No answer received." });
   } catch (error) {
-    console.error(error);
-    return new Response(JSON.stringify({ answer: "Sorry, there was an error processing your question." }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+    console.error("tax-ai error:", error);
+    return json({ answer: "Sorry, there was an error processing your question." }, 500);
   }
 });

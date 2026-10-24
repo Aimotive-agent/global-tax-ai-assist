@@ -1,107 +1,147 @@
-import { useState } from "react";
-import DashboardHeader from "@/components/DashboardHeader";
-import SidebarNav from "@/components/SidebarNav";
+import AppShell from "@/components/AppShell";
 import CompanyList from "@/components/CompanyList";
-import CreateCompanyModal from "@/components/CreateCompanyModal";
 import FileUploader from "@/components/FileUploader";
 import CountrySelector from "@/components/CountrySelector";
 import TaxFormPreview from "@/components/TaxFormPreview";
+import StatCard from "@/components/StatCard";
 import { useAppState } from "@/components/AppStateContext";
+import { getCountry } from "@/lib/taxData";
+import { Building2, FileText, Globe2, Sparkles, Bot, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const {
-    companies, setCompanies,
-    selectedCompany, setSelectedCompany,
-    uploadedFiles, setUploadedFiles,
-    selectedCountry, setSelectedCountry
+    companies,
+    selectedCompany,
+    setSelectedCompany,
+    uploadedFiles,
+    setUploadedFiles,
+    selectedCountry,
+    setSelectedCountry,
   } = useAppState();
-  const [showCreateCompany, setShowCreateCompany] = useState(false);
 
-  // Handler props
-  const handleCreateCompany = (name: string) => {
-    const newCompany = { id: `${Date.now()}`, name };
-    setCompanies(prev => [...prev, newCompany]);
-    setShowCreateCompany(false);
-  };
+  const selectedCompanyObj = companies.find((c) => c.id === selectedCompany);
+  const companyFiles = selectedCompany ? uploadedFiles[selectedCompany] || [] : [];
+  const totalFiles = Object.values(uploadedFiles).reduce((n, files) => n + files.length, 0);
+  const country = getCountry(selectedCountry);
 
-  const handleSelectCompany = (companyId: string) => {
-    setSelectedCompany(companyId);
-  };
-
-  const handleFileUpload = (companyId: string, files: File[]) => {
-    setUploadedFiles(prev => ({
+  const handleFileUpload = (files: File[]) => {
+    if (!selectedCompany) return;
+    const docs = files.map((f) => ({ name: f.name, size: f.size, type: f.type }));
+    setUploadedFiles((prev) => ({
       ...prev,
-      [companyId]: [...(prev[companyId] || []), ...files]
+      [selectedCompany]: [...(prev[selectedCompany] || []), ...docs],
+    }));
+  };
+
+  const handleFileRemove = (index: number) => {
+    if (!selectedCompany) return;
+    setUploadedFiles((prev) => ({
+      ...prev,
+      [selectedCompany]: (prev[selectedCompany] || []).filter((_, i) => i !== index),
     }));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-[#fbc2eb] via-[#a1c4fd] to-[#c2ffd8] flex text-left">
-      <SidebarNav
-        companies={companies}
-        selectedCompany={selectedCompany}
-        onSelectCompany={handleSelectCompany}
-        onAddCompany={() => setShowCreateCompany(true)}
-      />
-      <main className="flex-1 flex flex-col min-h-screen bg-transparent p-0">
-        <DashboardHeader />
-        <div className="container mx-auto py-8 flex flex-col gap-8 flex-1">
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Column: Company List */}
-            <div>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold text-lg text-gradient bg-gradient-to-r from-[#fc5c7d] to-[#6a82fb] bg-clip-text text-transparent">Companies</h2>
-                <button
-                  onClick={() => setShowCreateCompany(true)}
-                  className="px-3 py-1 rounded bg-primary text-primary-foreground text-sm hover:bg-primary/80 transition shadow"
-                >
-                  + Add Company
-                </button>
-              </div>
-              <CompanyList
-                companies={companies}
-                selectedCompany={selectedCompany}
-                onSelect={handleSelectCompany}
-              />
-            </div>
-            {/* Center Column: File Uploader and Invoices */}
-            <div className="col-span-2 flex flex-col gap-8">
-              <div className="rounded-xl border bg-white/90 shadow-2xl p-6">
-                <h2 className="text-lg font-semibold mb-2 text-primary">Upload Invoices & Receipts</h2>
-                {selectedCompany ? (
-                  <FileUploader
-                    companyId={selectedCompany}
-                    files={uploadedFiles[selectedCompany] || []}
-                    onUpload={files => handleFileUpload(selectedCompany, files)}
-                  />
-                ) : (
-                  <div className="text-muted-foreground text-sm">Select a company to upload documents.</div>
-                )}
-              </div>
-              <div className="rounded-xl border bg-white/90 p-6 shadow-xl flex flex-col gap-4">
-                <div className="flex justify-between items-center mb-2">
-                  <div>
-                    <span className="text-lg font-semibold text-gradient bg-gradient-to-r from-[#fc5c7d] to-[#6a82fb] bg-clip-text text-transparent">Tax AI Assistant</span>
-                    <span className="block text-muted-foreground text-xs">Automatically check what you can claim and generate country-specific tax forms.</span>
-                  </div>
-                  <CountrySelector selected={selectedCountry} onSelect={setSelectedCountry} />
-                </div>
-                <TaxFormPreview
-                  company={companies.find(c => c.id === selectedCompany)}
-                  files={uploadedFiles[selectedCompany] || []}
-                  country={selectedCountry}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <CreateCompanyModal
-          open={showCreateCompany}
-          onClose={() => setShowCreateCompany(false)}
-          onCreate={handleCreateCompany}
+    <AppShell title="Dashboard" eyebrow="Overview">
+      {/* Stats */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          icon={Building2}
+          label="Companies"
+          value={companies.length}
+          hint={selectedCompanyObj ? `Active: ${selectedCompanyObj.name}` : "No company selected"}
         />
-      </main>
-    </div>
+        <StatCard
+          icon={FileText}
+          label="Documents"
+          value={totalFiles}
+          hint="Invoices & receipts captured"
+        />
+        <StatCard
+          icon={Globe2}
+          label="Jurisdiction"
+          value={`${country.flag} ${country.code}`}
+          hint={country.name}
+        />
+        <StatCard
+          icon={Sparkles}
+          label="AI analysis"
+          value={totalFiles > 0 ? "Ready" : "Pending"}
+          hint={totalFiles > 0 ? "Documents ready for review" : "Upload documents to begin"}
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Companies */}
+        <section className="brand-card p-6">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold">Companies</h2>
+            <div className="section-rule mt-2" />
+          </div>
+          <CompanyList
+            companies={companies}
+            selectedCompany={selectedCompany}
+            onSelect={setSelectedCompany}
+          />
+        </section>
+
+        {/* Uploads */}
+        <section className="brand-card p-6 lg:col-span-2">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold">Upload invoices &amp; receipts</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {selectedCompanyObj
+                  ? `Adding documents for ${selectedCompanyObj.name}`
+                  : "Select a company to upload documents."}
+              </p>
+            </div>
+            <Link
+              to="/tax-ai"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-navy/20 px-3 py-2 text-sm font-medium text-navy transition hover:bg-navy/[0.04]"
+            >
+              <Bot size={15} /> Ask Tax AI
+            </Link>
+          </div>
+          {selectedCompany ? (
+            <FileUploader
+              files={companyFiles}
+              onUpload={handleFileUpload}
+              onRemove={handleFileRemove}
+            />
+          ) : (
+            <div className="rounded-lg border border-dashed border-line bg-paper-2/50 p-8 text-center text-sm text-muted-foreground">
+              Select a company on the left to upload documents.
+            </div>
+          )}
+        </section>
+
+        {/* Tax AI preview */}
+        <section className="brand-card p-6 lg:col-span-3">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold">Tax AI Assistant</h2>
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                Automatically check what you can claim and generate country-specific tax forms.
+              </p>
+            </div>
+            <CountrySelector selected={selectedCountry} onSelect={setSelectedCountry} />
+          </div>
+          <TaxFormPreview
+            company={selectedCompanyObj}
+            files={companyFiles}
+            country={selectedCountry}
+          />
+          <Link
+            to="/tax-overview"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-navy hover:text-navy-deep"
+          >
+            Open full tax overview <ArrowRight size={15} />
+          </Link>
+        </section>
+      </div>
+    </AppShell>
   );
 };
 

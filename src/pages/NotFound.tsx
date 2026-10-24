@@ -1,25 +1,29 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
+    document.title = "Page not found — Veritas Tax AI";
+  }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
-      </div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-paper px-6 text-center">
+      <img src="/veritas-mark.png" alt="Veritas Global AI" className="mb-6 h-14 w-14 object-contain" />
+      <div className="brand-eyebrow">404</div>
+      <h1 className="mt-2 text-4xl font-semibold">Page not found</h1>
+      <div className="section-rule mx-auto mt-4" />
+      <p className="mt-4 max-w-md text-sm text-muted-foreground">
+        The page <code className="rounded bg-paper-2 px-1.5 py-0.5 text-ink">{location.pathname}</code>{" "}
+        doesn’t exist. Return to your dashboard to keep working.
+      </p>
+      <Link
+        to="/"
+        className="mt-6 inline-flex items-center rounded-md bg-navy px-6 py-3 text-sm font-medium text-paper transition hover:bg-navy-deep"
+      >
+        Return to dashboard
+      </Link>
     </div>
   );
 };

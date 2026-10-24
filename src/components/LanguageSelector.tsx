@@ -1,4 +1,3 @@
-
 import { useTranslation } from "react-i18next";
 
 interface LanguageSelectorProps {
@@ -27,15 +26,17 @@ const LanguageSelector = ({ onLanguageChange }: LanguageSelectorProps) => {
   return (
     <select
       value={i18n.language}
-      onChange={e => {
+      onChange={(e) => {
         i18n.changeLanguage(e.target.value);
         if (onLanguageChange) onLanguageChange(e.target.value);
       }}
-      className="px-3 py-2 rounded border bg-muted w-full max-w-xs"
+      className="h-9 rounded-md border border-line bg-white px-3 text-sm text-foreground transition hover:border-navy/30"
       aria-label="Select language"
     >
-      {languages.map(l => (
-        <option value={l.code} key={l.code}>{l.label}</option>
+      {languages.map((l) => (
+        <option value={l.code} key={l.code}>
+          {l.label}
+        </option>
       ))}
     </select>
   );

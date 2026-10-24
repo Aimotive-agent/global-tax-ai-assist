@@ -1,53 +1,59 @@
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-
-const countryForms = [
-  { code: "us", name: "USA", file: "/sample/tax-form-us.pdf" },
-  { code: "de", name: "Germany", file: "/sample/tax-form-de.pdf" },
-  { code: "fr", name: "France", file: "/sample/tax-form-fr.pdf" },
-  { code: "in", name: "India", file: "/sample/tax-form-in.pdf" },
-  // Add more as needed, files must exist in /public/sample
-];
+import { ExternalLink, FileCheck2, Clock } from "lucide-react";
+import AppShell from "@/components/AppShell";
+import { countries } from "@/lib/taxData";
 
 const TaxForms = () => {
   const { t } = useTranslation();
-  const [country, setCountry] = useState<string>("us");
-  const form = countryForms.find(f => f.code === country);
-  const navigate = useNavigate();
 
   return (
-    <div className="p-6 max-w-xl">
-      <button
-        className="mb-4 px-3 py-1 bg-secondary text-secondary-foreground rounded hover:bg-accent transition"
-        onClick={() => navigate("/")}
-      >
-        ← {t("Back")}
-      </button>
-      <h1 className="text-2xl font-bold mb-2">{t("Tax Forms")}</h1>
-      <div className="mb-3">
-        <label className="block mb-1">{t("Select your country")}</label>
-        <select
-          value={country}
-          onChange={e => setCountry(e.target.value)}
-          className="border rounded px-3 py-2 bg-muted w-full max-w-xs"
-        >
-          {countryForms.map(c => (
-            <option key={c.code} value={c.code}>{c.name}</option>
-          ))}
-        </select>
+    <AppShell title="Tax Forms" eyebrow="Form library">
+      <div className="mb-6 max-w-2xl">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Headline filing form for every jurisdiction Veritas Tax AI supports. Templates and
+          AI-prepared filings are on the way — until then, each card links to the official source.
+        </p>
       </div>
-      <div className="mb-2">
-        {form && (
-          <Button asChild>
-            <a href={form.file} download>
-              {t("Download Tax Form")}
-            </a>
-          </Button>
-        )}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {countries.map((c) => (
+          <div key={c.code} className="brand-card flex flex-col p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy/[0.06] text-xl">
+                {c.flag}
+              </span>
+              <div>
+                <div className="font-semibold text-ink">{c.name}</div>
+                <div className="text-xs text-muted-foreground">{c.authority}</div>
+              </div>
+            </div>
+            <div className="mt-4 flex-1">
+              <div className="flex items-start gap-2 text-sm">
+                <FileCheck2 size={16} className="mt-0.5 shrink-0 text-navy" />
+                <span className="text-ink">{c.form}</span>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-2">
+              <a
+                href={c.authorityUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-navy/20 px-3 py-2 text-sm font-medium text-navy transition hover:bg-navy/[0.04]"
+              >
+                Official source <ExternalLink size={12} />
+              </a>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-md bg-paper-2 px-3 py-2 text-xs text-muted-foreground"
+                title="Prepared templates are coming soon"
+              >
+                <Clock size={12} /> {t("Template soon")}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
+    </AppShell>
   );
 };
+
 export default TaxForms;
