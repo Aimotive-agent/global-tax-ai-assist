@@ -23,9 +23,9 @@ const Auth = () => {
     document.title = "Sign in — Veritas Tax AI";
   }, []);
 
-  // Auto redirect after successful login with a short delay
+  // Auto redirect after successful login/signup with a short delay
   useEffect(() => {
-    if (successMsg === "Success! Redirecting...") {
+    if (successMsg === "Success! Redirecting..." || successMsg === "Account created! Redirecting...") {
       const timeout = setTimeout(() => {
         navigate("/", { replace: true });
       }, 1200);
@@ -48,7 +48,7 @@ const Auth = () => {
       else setSuccessMsg("Success! Redirecting...");
     } else {
       const redirectUrl = window.location.origin + "/";
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -56,8 +56,17 @@ const Auth = () => {
           data: {},
         },
       });
-      if (error) setErrorMsg(error.message || "Error signing up");
-      else setSuccessMsg("Check your email for a confirmation link!");
+      if (error) {
+        setErrorMsg(error.message || "Error signing up");
+      } else if (data.session) {
+        // Email confirmation is disabled — sign the user straight in.
+        setSuccessMsg("Account created! Redirecting...");
+      } else if (data.user && (data.user.identities?.length ?? 0) === 0) {
+        // GoTrue hides existing users behind a "successful" signup with no identity.
+        setErrorMsg("An account with this email already exists — please sign in.");
+      } else {
+        setSuccessMsg("Check your email for a confirmation link!");
+      }
     }
     setLoading(false);
   };
